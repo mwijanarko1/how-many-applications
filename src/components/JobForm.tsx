@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { JobApplicationFormData, JobApplication } from "@/types/jobApplication";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit3, Building2, Briefcase, Link as LinkIcon, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Edit3, Building2, Briefcase, Link as LinkIcon, Calendar, X } from "lucide-react";
 
 interface JobFormProps {
   onSubmit: (jobData: JobApplicationFormData) => void;
@@ -16,7 +22,7 @@ interface JobFormProps {
 }
 
 export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<JobApplicationFormData>({
     title: "",
     company: "",
@@ -25,7 +31,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
     appliedDate: new Date().toISOString().split('T')[0],
   });
 
-  // Populate form when editing and expand form
+  // Populate form when editing and open dialog
   useEffect(() => {
     if (editingJob) {
       setFormData({
@@ -35,15 +41,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
         jobLink: editingJob.jobLink,
         appliedDate: editingJob.appliedDate,
       });
-      setIsCollapsed(false); // Expand form when editing
-    } else {
-      setFormData({
-        title: "",
-        company: "",
-        description: "",
-        jobLink: "",
-        appliedDate: new Date().toISOString().split('T')[0],
-      });
+      setIsOpen(true); // Open dialog when editing
     }
   }, [editingJob]);
 
@@ -58,8 +56,10 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
-    // Reset form only if not editing
+
+    // Close dialog and reset form only if not editing
     if (!editingJob) {
+      setIsOpen(false);
       setFormData({
         title: "",
         company: "",
@@ -70,178 +70,187 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
     }
   };
 
+  const handleOpenDialog = () => {
+    setIsOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsOpen(false);
+    if (!editingJob) {
+      setFormData({
+        title: "",
+        company: "",
+        description: "",
+        jobLink: "",
+        appliedDate: new Date().toISOString().split('T')[0],
+      });
+    }
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
+  };
+
   const isEditing = !!editingJob;
 
   return (
-    <Card className="w-full">
-      <CardHeader
-        className="cursor-pointer hover:bg-slate-50 transition-colors duration-200"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        role="button"
-        tabIndex={0}
-        aria-label={isCollapsed ? "Expand form" : "Collapse form"}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsCollapsed(!isCollapsed);
-          }
-        }}
+    <>
+      {/* Trigger Button */}
+      <Button
+        onClick={handleOpenDialog}
+        className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-black to-gray-900 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
+        size="lg"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isEditing ? 'bg-orange-100' : 'bg-blue-100'}`}>
+        <Plus className="mr-3 h-6 w-6" />
+        {isEditing ? 'Edit Job Application' : 'Add New Job Application'}
+      </Button>
+
+      {/* Dialog Modal */}
+      <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl">
               {isEditing ? (
-                <Edit3 className={`h-5 w-5 ${isEditing ? 'text-orange-600' : 'text-blue-600'}`} />
+                <>
+                  <Edit3 className="h-6 w-6 text-orange-600" />
+                  Edit Job Application
+                </>
               ) : (
-                <Plus className="h-5 w-5 text-blue-600" />
+                <>
+                  <Plus className="h-6 w-6 text-black" />
+                  Add New Job Application
+                </>
               )}
-            </div>
-            <div>
-              <CardTitle className="text-xl">
-                {isEditing ? 'Edit Job Application' : 'Add New Job Application'}
-              </CardTitle>
-              <CardDescription>
-                {isEditing
-                  ? 'Update the details of your job application'
-                  : 'Enter the details of the job you want to track'
-                }
-              </CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-slate-100 transition-colors duration-200">
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4 text-slate-500" />
-            ) : (
-              <ChevronUp className="h-4 w-4 text-slate-500" />
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      {!isCollapsed && (
-        <CardContent className="transition-all duration-300 ease-in-out">
+            </DialogTitle>
+            <DialogDescription>
+              {isEditing
+                ? 'Update the details of your job application'
+                : 'Enter the details of the job you want to track'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
           <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="flex items-center gap-2 text-sm font-medium">
+                  <Briefcase className="h-4 w-4" />
+                  Job Title *
+                </Label>
+                <Input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="e.g. Senior Software Engineer"
+                  className="transition-colors focus:ring-2"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company" className="flex items-center gap-2 text-sm font-medium">
+                  <Building2 className="h-4 w-4" />
+                  Company *
+                </Label>
+                <Input
+                  type="text"
+                  id="company"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="e.g. Google Inc."
+                  className="transition-colors focus:ring-2"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="title" className="flex items-center gap-2 text-sm font-medium">
-                <Briefcase className="h-4 w-4" />
-                Job Title *
+              <Label htmlFor="description" className="text-sm font-medium">
+                Job Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                placeholder="Describe the role, requirements, or any notes about this position..."
+                className="transition-colors focus:ring-2 resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Add details about the job requirements or your thoughts
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jobLink" className="flex items-center gap-2 text-sm font-medium">
+                <LinkIcon className="h-4 w-4" />
+                Job Application Link
               </Label>
               <Input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
+                type="url"
+                id="jobLink"
+                name="jobLink"
+                value={formData.jobLink}
+                onChange={handleInputChange}
+                placeholder="https://company.com/careers/job-id"
+                className="transition-colors focus:ring-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Link to the job posting or application page
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="appliedDate" className="flex items-center gap-2 text-sm font-medium">
+                <Calendar className="h-4 w-4" />
+                Applied Date *
+              </Label>
+              <Input
+                type="date"
+                id="appliedDate"
+                name="appliedDate"
+                value={formData.appliedDate}
                 onChange={handleInputChange}
                 required
-                placeholder="e.g. Senior Software Engineer"
                 className="transition-colors focus:ring-2"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="company" className="flex items-center gap-2 text-sm font-medium">
-                <Building2 className="h-4 w-4" />
-                Company *
-              </Label>
-              <Input
-                type="text"
-                id="company"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                required
-                placeholder="e.g. Google Inc."
-                className="transition-colors focus:ring-2"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium">
-              Job Description
-            </Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={4}
-              placeholder="Describe the role, requirements, or any notes about this position..."
-              className="transition-colors focus:ring-2 resize-none"
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional: Add details about the job requirements or your thoughts
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="jobLink" className="flex items-center gap-2 text-sm font-medium">
-              <LinkIcon className="h-4 w-4" />
-              Job Application Link
-            </Label>
-            <Input
-              type="url"
-              id="jobLink"
-              name="jobLink"
-              value={formData.jobLink}
-              onChange={handleInputChange}
-              placeholder="https://company.com/careers/job-id"
-              className="transition-colors focus:ring-2"
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional: Link to the job posting or application page
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="appliedDate" className="flex items-center gap-2 text-sm font-medium">
-              <Calendar className="h-4 w-4" />
-              Applied Date *
-            </Label>
-            <Input
-              type="date"
-              id="appliedDate"
-              name="appliedDate"
-              value={formData.appliedDate}
-              onChange={handleInputChange}
-              required
-              className="transition-colors focus:ring-2"
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button
-              type="submit"
-              className="flex-1 h-11 text-base font-medium"
-              size="lg"
-            >
-              {isEditing ? (
-                <>
-                  <Edit3 className="mr-2 h-4 w-4" />
-                  Update Application
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Application
-                </>
-              )}
-            </Button>
-            {isEditing && onCancelEdit && (
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button
+                type="submit"
+                className="flex-1 h-11 text-base font-medium"
+                size="lg"
+              >
+                {isEditing ? (
+                  <>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Update Application
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Application
+                  </>
+                )}
+              </Button>
               <Button
                 type="button"
-                onClick={onCancelEdit}
+                onClick={handleCloseDialog}
                 variant="outline"
                 className="flex-1 h-11 text-base font-medium"
                 size="lg"
               >
-                Cancel Edit
+                <X className="mr-2 h-4 w-4" />
+                Cancel
               </Button>
-            )}
-          </div>
-        </form>
-      </CardContent>
-      )}
-    </Card>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

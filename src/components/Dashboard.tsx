@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { JobApplication, JobApplicationFormData } from "@/types/jobApplication";
+import { useAuth } from "@/contexts/AuthContext";
 import JobForm from "./JobForm";
 import JobTable from "./JobTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Briefcase,
   TrendingUp,
@@ -13,74 +15,120 @@ import {
   Award,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  LogOut,
+  User
 } from "lucide-react";
+import {
+  getUserJobApplications,
+  addJobApplication,
+  updateJobApplication,
+  deleteJobApplication,
+  migrateLocalStorageToFirestore
+} from "@/lib/firestore";
 
 export default function Dashboard() {
+  const { user, signOut } = useAuth();
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load jobs from localStorage on component mount
+  // Load jobs from Firestore on component mount and when user changes
   useEffect(() => {
-    const savedJobs = localStorage.getItem('jobApplications');
-    if (savedJobs) {
-      try {
-        const parsedJobs = JSON.parse(savedJobs);
-
-        // Migrate old data to include new fields
-        const migratedJobs = parsedJobs.map((job: Partial<JobApplication>) => ({
-          ...job,
-          interview: job.interview !== undefined ? job.interview : null, // Add interview field if missing
-          assessment: job.assessment !== undefined ? job.assessment : null, // Add assessment field if missing
-        })) as JobApplication[];
-
-        setJobs(migratedJobs);
-      } catch (error) {
-        console.error('Error loading jobs from localStorage:', error);
-        // If there's an error, clear the corrupted data
-        localStorage.removeItem('jobApplications');
-        setJobs([]);
+    const loadJobs = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
       }
+
+      try {
+        setLoading(true);
+
+        // First, try to migrate any existing localStorage data
+        const localJobs = localStorage.getItem('jobApplications');
+        if (localJobs) {
+          try {
+            await migrateLocalStorageToFirestore(user.uid);
+          } catch (error) {
+            console.error('Error migrating localStorage data:', error);
+          }
+        }
+
+        // Load jobs from Firestore
+        const userJobs = await getUserJobApplications(user.uid);
+        setJobs(userJobs);
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+        setJobs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadJobs();
+  }, [user]);
+
+  const handleAddJob = async (jobData: JobApplicationFormData) => {
+    if (!user) return;
+
+    try {
+      if (editingJob) {
+        // Update existing job
+        await updateJobApplication(editingJob.id, jobData);
+        setJobs(prev => prev.map(job =>
+          job.id === editingJob.id
+            ? { ...job, ...jobData }
+            : job
+        ));
+        setEditingJob(null);
+      } else {
+        // Add new job
+        const newJobId = await addJobApplication(user.uid, jobData);
+        const newJob: JobApplication = {
+          ...jobData,
+          id: newJobId,
+          assessment: null,
+          response: null,
+          responseDate: null,
+          interview: null,
+          decision: "",
+        };
+        setJobs(prev => [newJob, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding/updating job:', error);
+      // You might want to show a toast notification here
     }
-  }, []);
+  };
 
-  // Save jobs to localStorage whenever jobs state changes
-  useEffect(() => {
-    localStorage.setItem('jobApplications', JSON.stringify(jobs));
-  }, [jobs]);
+  const handleDeleteJob = async (id: string) => {
+    try {
+      await deleteJobApplication(id);
+      setJobs(prev => prev.filter(job => job.id !== id));
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      // You might want to show a toast notification here
+    }
+  };
 
-  const handleAddJob = (jobData: JobApplicationFormData) => {
-    if (editingJob) {
-      // Update existing job
+  const handleUpdateJob = async (id: string, updates: Partial<JobApplication>) => {
+    try {
+      await updateJobApplication(id, updates);
       setJobs(prev => prev.map(job =>
-        job.id === editingJob.id
-          ? { ...job, ...jobData }
-          : job
+        job.id === id ? { ...job, ...updates } : job
       ));
-      setEditingJob(null);
-    } else {
-      // Add new job
-      const newJob: JobApplication = {
-        ...jobData,
-        id: Date.now().toString(), // Simple ID generation
-        assessment: null,
-        response: null,
-        responseDate: null,
-        interview: null,
-        decision: "",
-      };
-      setJobs(prev => [newJob, ...prev]);
+    } catch (error) {
+      console.error('Error updating job:', error);
+      // You might want to show a toast notification here
     }
   };
 
-  const handleDeleteJob = (id: string) => {
-    setJobs(prev => prev.filter(job => job.id !== id));
-  };
-
-  const handleUpdateJob = (id: string, updates: Partial<JobApplication>) => {
-    setJobs(prev => prev.map(job =>
-      job.id === id ? { ...job, ...updates } : job
-    ));
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const handleEditJob = (job: JobApplication) => {
@@ -96,7 +144,7 @@ export default function Dashboard() {
   const totalRejected = jobs.filter(job => job.decision === 'Rejected').length;
   const totalInterview1 = jobs.filter(job => job.assessment === true).length;
   const totalInterviewFinal = jobs.filter(job => job.decision === 'Offered Job').length;
-  const totalResponses = jobs.filter(job => job.response === true).length;
+  const totalResponses = jobs.filter(job => job.response !== null).length;
   const totalInterviews = jobs.filter(job => job.interview === true).length;
   const responseRate = totalApplications > 0 ?
     (totalResponses / totalApplications * 100).toFixed(1) : 0;
@@ -138,21 +186,52 @@ export default function Dashboard() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your job applications...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary rounded-lg">
-              <Briefcase className="h-6 w-6 text-primary-foreground" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary rounded-lg">
+                <Briefcase className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">How many applications?!</h1>
+                <p className="text-slate-600">Track your job applications and interview progress</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">How many applications?!</h1>
-              <p className="text-slate-600">Track your job applications and interview progress</p>
+
+            {/* User Info and Sign Out */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <User className="h-4 w-4" />
+                <span>{user?.displayName || user?.email}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-4">
+
+          <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-sm">
               <Clock className="w-3 h-3 mr-1" />
               Last updated: {new Date().toLocaleDateString()}
@@ -161,6 +240,15 @@ export default function Dashboard() {
               {totalApplications} applications tracked
             </Badge>
           </div>
+        </div>
+
+        {/* Add New Job Application Button */}
+        <div className="mb-8">
+          <JobForm
+            onSubmit={handleAddJob}
+            editingJob={editingJob}
+            onCancelEdit={handleCancelEdit}
+          />
         </div>
 
         {/* Summary Statistics */}
@@ -232,13 +320,19 @@ export default function Dashboard() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-600">Pending Assessments</span>
                 <Badge variant="outline">
-                  {jobs.filter(job => job.assessment === null).length}
+                  {jobs.filter(job => job.response === 'assessment' && job.assessment === null).length}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-600">No Assessment Required</span>
+                <Badge variant="outline">
+                  {jobs.filter(job => job.assessment === 'n/a').length}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-600">Awaiting Interviews</span>
                 <Badge variant="outline">
-                  {jobs.filter(job => job.interview === null && job.assessment === true).length}
+                  {jobs.filter(job => job.interview === null && (job.assessment === true || job.response === 'interview')).length}
                 </Badge>
               </div>
             </CardContent>
@@ -253,32 +347,21 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Applications Rejected</span>
-                <Badge variant="destructive">{totalRejected}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">No Response Yet</span>
-                <Badge variant="secondary">
-                  {jobs.filter(job => job.response === false).length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-600">Active Applications</span>
                 <Badge variant="default">
                   {jobs.filter(job => job.decision === "").length}
                 </Badge>
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-600">Applications Rejected</span>
+                <Badge variant="destructive">{totalRejected}</Badge>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Form and Table */}
-        <div className="space-y-8">
-          <JobForm
-            onSubmit={handleAddJob}
-            editingJob={editingJob}
-            onCancelEdit={handleCancelEdit}
-          />
+        {/* Job Applications Table */}
+        <div>
           <JobTable
             jobs={jobs}
             onDelete={handleDeleteJob}
