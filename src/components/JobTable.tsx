@@ -147,17 +147,6 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                       {job.description}
                     </div>
                   )}
-                      {job.jobLink && (
-                    <a
-                      href={job.jobLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          View job
-                        </a>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -328,6 +317,14 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
+                        {job.jobLink && (
+                          <DropdownMenuItem
+                            onClick={() => window.open(job.jobLink, '_blank', 'noopener,noreferrer')}
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            View Job Posting
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => onEdit(job)}>
                           <Edit3 className="mr-2 h-4 w-4" />
                           Edit

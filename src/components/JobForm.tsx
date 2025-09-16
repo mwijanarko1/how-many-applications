@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit3, Building2, Briefcase, Link as LinkIcon, Calendar } from "lucide-react";
+import { Plus, Edit3, Building2, Briefcase, Link as LinkIcon, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 
 interface JobFormProps {
   onSubmit: (jobData: JobApplicationFormData) => void;
@@ -16,6 +16,7 @@ interface JobFormProps {
 }
 
 export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [formData, setFormData] = useState<JobApplicationFormData>({
     title: "",
     company: "",
@@ -24,7 +25,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
     appliedDate: new Date().toISOString().split('T')[0],
   });
 
-  // Populate form when editing
+  // Populate form when editing and expand form
   useEffect(() => {
     if (editingJob) {
       setFormData({
@@ -34,6 +35,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
         jobLink: editingJob.jobLink,
         appliedDate: editingJob.appliedDate,
       });
+      setIsCollapsed(false); // Expand form when editing
     } else {
       setFormData({
         title: "",
@@ -72,30 +74,52 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${isEditing ? 'bg-orange-100' : 'bg-blue-100'}`}>
-            {isEditing ? (
-              <Edit3 className={`h-5 w-5 ${isEditing ? 'text-orange-600' : 'text-blue-600'}`} />
-            ) : (
-              <Plus className="h-5 w-5 text-blue-600" />
-            )}
+      <CardHeader
+        className="cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        role="button"
+        tabIndex={0}
+        aria-label={isCollapsed ? "Expand form" : "Collapse form"}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsCollapsed(!isCollapsed);
+          }
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isEditing ? 'bg-orange-100' : 'bg-blue-100'}`}>
+              {isEditing ? (
+                <Edit3 className={`h-5 w-5 ${isEditing ? 'text-orange-600' : 'text-blue-600'}`} />
+              ) : (
+                <Plus className="h-5 w-5 text-blue-600" />
+              )}
+            </div>
+            <div>
+              <CardTitle className="text-xl">
+                {isEditing ? 'Edit Job Application' : 'Add New Job Application'}
+              </CardTitle>
+              <CardDescription>
+                {isEditing
+                  ? 'Update the details of your job application'
+                  : 'Enter the details of the job you want to track'
+                }
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-xl">
-              {isEditing ? 'Edit Job Application' : 'Add New Job Application'}
-            </CardTitle>
-            <CardDescription>
-              {isEditing
-                ? 'Update the details of your job application'
-                : 'Enter the details of the job you want to track'
-              }
-            </CardDescription>
+          <div className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-slate-100 transition-colors duration-200">
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4 text-slate-500" />
+            ) : (
+              <ChevronUp className="h-4 w-4 text-slate-500" />
+            )}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {!isCollapsed && (
+        <CardContent className="transition-all duration-300 ease-in-out">
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="title" className="flex items-center gap-2 text-sm font-medium">
@@ -217,6 +241,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
           </div>
         </form>
       </CardContent>
+      )}
     </Card>
   );
 }
