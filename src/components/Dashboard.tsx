@@ -9,6 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Briefcase,
   TrendingUp,
   Users,
@@ -198,37 +204,44 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-4 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary rounded-lg">
                 <Briefcase className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">How many applications?!</h1>
-                <p className="text-slate-600">Track your job applications and interview progress</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">How many applications?!</h1>
+                <p className="text-sm sm:text-base text-slate-600">Track your job applications and interview progress</p>
               </div>
             </div>
 
-            {/* User Info and Sign Out */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <User className="h-4 w-4" />
-                <span>{user?.displayName || user?.email}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign Out
-              </Button>
-            </div>
+            {/* User Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 h-10 px-3 rounded-full hover:bg-slate-100">
+                  <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <span className="hidden sm:inline text-sm font-medium text-slate-700 truncate max-w-[120px]">
+                    {user?.displayName || user?.email}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem disabled className="font-medium">
+                  <User className="mr-2 h-4 w-4" />
+                  {user?.displayName || user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex items-center gap-2">
@@ -243,7 +256,7 @@ export default function Dashboard() {
         </div>
 
         {/* Add New Job Application Button */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <JobForm
             onSubmit={handleAddJob}
             editingJob={editingJob}
@@ -252,24 +265,24 @@ export default function Dashboard() {
         </div>
 
         {/* Summary Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-600">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-slate-600">
                     {stat.title}
                   </CardTitle>
-                  <div className={`p-2 rounded-md ${stat.bgColor}`}>
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                  <div className={`p-1.5 sm:p-2 rounded-md ${stat.bgColor}`}>
+                    <Icon className={`h-3 w-3 sm:h-4 sm:w-4 ${stat.color}`} />
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${stat.color} mb-1`}>
+                <CardContent className="pt-0">
+                  <div className={`text-lg sm:text-2xl font-bold ${stat.color} mb-1`}>
                     {stat.value}
                   </div>
-                  <CardDescription className="text-xs">
+                  <CardDescription className="text-xs leading-tight">
                     {stat.description}
                   </CardDescription>
                 </CardContent>
@@ -279,59 +292,59 @@ export default function Dashboard() {
         </div>
 
         {/* Status Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 Success Metrics
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3 pt-0">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Assessments Passed</span>
-                <Badge variant="secondary">{totalInterview1}</Badge>
+                <span className="text-xs sm:text-sm text-slate-600">Assessments Passed</span>
+                <Badge variant="secondary" className="text-xs">{totalInterview1}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Interviews Completed</span>
-                <Badge variant="secondary">{totalInterviews}</Badge>
+                <span className="text-xs sm:text-sm text-slate-600">Interviews Completed</span>
+                <Badge variant="secondary" className="text-xs">{totalInterviews}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Job Offers Received</span>
-                <Badge variant="secondary">{totalInterviewFinal}</Badge>
+                <span className="text-xs sm:text-sm text-slate-600">Job Offers Received</span>
+                <Badge variant="secondary" className="text-xs">{totalInterviewFinal}</Badge>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
                 Pending Actions
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3 pt-0">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Awaiting Response</span>
-                <Badge variant="outline">
+                <span className="text-xs sm:text-sm text-slate-600">Awaiting Response</span>
+                <Badge variant="outline" className="text-xs">
                   {jobs.filter(job => job.response === null).length}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Pending Assessments</span>
-                <Badge variant="outline">
+                <span className="text-xs sm:text-sm text-slate-600">Pending Assessments</span>
+                <Badge variant="outline" className="text-xs">
                   {jobs.filter(job => job.response === 'assessment' && job.assessment === null).length}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">No Assessment Required</span>
-                <Badge variant="outline">
+                <span className="text-xs sm:text-sm text-slate-600">No Assessment Required</span>
+                <Badge variant="outline" className="text-xs">
                   {jobs.filter(job => job.assessment === 'n/a').length}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Awaiting Interviews</span>
-                <Badge variant="outline">
+                <span className="text-xs sm:text-sm text-slate-600">Awaiting Interviews</span>
+                <Badge variant="outline" className="text-xs">
                   {jobs.filter(job => job.interview === null && (job.assessment === true || job.response === 'interview')).length}
                 </Badge>
               </div>
@@ -339,22 +352,22 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                 Application Status
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3 pt-0">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Active Applications</span>
-                <Badge variant="default">
+                <span className="text-xs sm:text-sm text-slate-600">Active Applications</span>
+                <Badge variant="default" className="text-xs">
                   {jobs.filter(job => job.decision === "").length}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Applications Rejected</span>
-                <Badge variant="destructive">{totalRejected}</Badge>
+                <span className="text-xs sm:text-sm text-slate-600">Applications Rejected</span>
+                <Badge variant="destructive" className="text-xs">{totalRejected}</Badge>
               </div>
             </CardContent>
           </Card>

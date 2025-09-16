@@ -149,7 +149,251 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        {/* Mobile Card View */}
+        <div className="block md:hidden space-y-4">
+          {jobs.map((job) => (
+            <Card key={job.id} className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Briefcase className="h-4 w-4 text-slate-500" />
+                      <h3 className="font-medium text-slate-900 text-sm">{job.title}</h3>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Building2 className="h-4 w-4" />
+                      <span>{job.company}</span>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setSelectedJob(job)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      {job.jobLink && (
+                        <DropdownMenuItem
+                          onClick={() => window.open(job.jobLink, '_blank', 'noopener,noreferrer')}
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          View Job Posting
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => onEdit(job)}>
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(job.id)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Calendar className="h-3 w-3" />
+                  Applied {formatDate(job.appliedDate)}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">Response</span>
+                    <div className="flex-1 ml-2">
+                      <Select
+                        value={job.response || 'waiting'}
+                        onValueChange={(value) => {
+                          const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection';
+                          onUpdate(job.id, { response: responseValue });
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="waiting">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-3 w-3" />
+                              Waiting
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="assessment">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-3 w-3" />
+                              Assessment
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="interview">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-3 w-3" />
+                              Interview
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="rejection">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-3 w-3" />
+                              Rejected
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {showAssessmentColumn && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">Assessment</span>
+                      <div className="flex-1 ml-2">
+                        <Select
+                          value={job.assessment === null ? 'null' : job.assessment === 'n/a' ? 'n/a' : job.assessment.toString()}
+                          onValueChange={(value) => {
+                            let assessmentValue: boolean | null | 'n/a';
+                            if (value === 'null') {
+                              assessmentValue = null;
+                            } else if (value === 'n/a') {
+                              assessmentValue = 'n/a';
+                            } else {
+                              assessmentValue = value === 'true';
+                            }
+                            onUpdate(job.id, { assessment: assessmentValue });
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="null">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3" />
+                                Pending
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="true">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-3 w-3" />
+                                Passed
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="false">
+                              <div className="flex items-center gap-2">
+                                <XCircle className="h-3 w-3" />
+                                Not Passed
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="n/a">
+                              <div className="flex items-center gap-2">
+                                <div className="h-3 w-3 rounded-full bg-slate-300" />
+                                No Assessment
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {showInterviewColumn && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">Interview</span>
+                      <div className="flex-1 ml-2">
+                        <Select
+                          value={job.interview === null ? 'null' : job.interview.toString()}
+                          onValueChange={(value) => {
+                            const interviewValue = value === 'null' ? null : value === 'true';
+                            onUpdate(job.id, { interview: interviewValue });
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="null">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3" />
+                                Pending
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="true">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-3 w-3" />
+                                Scheduled
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="false">
+                              <div className="flex items-center gap-2">
+                                <XCircle className="h-3 w-3" />
+                                No Interview
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {showStatusColumn && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">Status</span>
+                      <div className="flex-1 ml-2">
+                        <Select
+                          value={job.decision || 'pending'}
+                          onValueChange={(value) => {
+                            const decisionValue = value === 'pending' ? '' : value;
+                            onUpdate(job.id, { decision: decisionValue });
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-7 text-xs">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3" />
+                                Pending
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Rejected">
+                              <div className="flex items-center gap-2">
+                                <XCircle className="h-3 w-3" />
+                                Rejected
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Offered Job">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-3 w-3" />
+                                Offered Job
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {job.response && job.responseDate && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <div className="text-xs text-slate-500 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                      Response {formatDate(job.responseDate)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
