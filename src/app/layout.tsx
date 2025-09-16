@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,23 +16,23 @@ const geistMono = Geist_Mono({
 
 // Define metadata for better SEO
 export const metadata: Metadata = {
-  title: "Next.js Beginner Template",
-  description: "A beginner-friendly Next.js template with TailwindCSS and TypeScript",
-  keywords: ["Next.js", "React", "TailwindCSS", "TypeScript", "Template"],
-  authors: [{ name: "Created with Cursor Agent" }],
-  creator: "Cursor Agent",
-  publisher: "Cursor Agent",
+  title: "How many applications?!",
+  description: "Professional job application tracker to organize your job search, track applications, interviews, and offers. Built with Next.js and modern UI components.",
+  keywords: ["job application tracker", "career management", "job search", "interview tracking", "resume management", "career tools"],
+  authors: [{ name: "How many applications?! Team" }],
+  creator: "How many applications?!",
+  publisher: "How many applications?!",
   openGraph: {
-    title: "Next.js Beginner Template",
-    description: "A beginner-friendly Next.js template with TailwindCSS and TypeScript",
-    url: "https://nextjs.org/",
-    siteName: "Next.js Beginner Template",
+    title: "How many applications?!",
+    description: "Professional job application tracker to organize your job search, track applications, interviews, and offers.",
+    url: "https://job-application-tracker.vercel.app/",
+    siteName: "How many applications?!",
     images: [
       {
-        url: "/og-image.png",
+        url: "/job.png",
         width: 1200,
         height: 630,
-        alt: "Next.js Beginner Template",
+        alt: "How many applications?! - Professional Career Management Tool",
       },
     ],
     locale: "en_US",
@@ -40,14 +40,31 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Next.js Beginner Template",
-    description: "A beginner-friendly Next.js template with TailwindCSS and TypeScript",
-    images: ["/og-image.png"],
+    title: "How many applications?!",
+    description: "Professional job application tracker to organize your job search, track applications, interviews, and offers.",
+    images: ["/job.png"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+  ],
 };
 
 export default function RootLayout({

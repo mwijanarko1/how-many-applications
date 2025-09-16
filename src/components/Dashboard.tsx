@@ -148,7 +148,7 @@ export default function Dashboard() {
               <Briefcase className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Job Application Tracker</h1>
+              <h1 className="text-3xl font-bold text-slate-900">How many applications?!</h1>
               <p className="text-slate-600">Track your job applications and interview progress</p>
             </div>
           </div>

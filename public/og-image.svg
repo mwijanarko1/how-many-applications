@@ -1,0 +1,59 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:0.95" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Main content card -->
+  <rect x="80" y="120" width="1040" height="390" rx="20" fill="url(#cardGradient)" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- Icon -->
+  <circle cx="200" cy="240" r="40" fill="#3b82f6" opacity="0.1"/>
+  <path d="M180 220 L190 210 L210 230 L230 200 L250 210 L240 230 L260 240 L240 250 L250 270 L230 260 L210 280 L190 260 L180 270 L190 250 Z" fill="#3b82f6"/>
+
+  <!-- Title -->
+  <text x="320" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="#1e293b">
+    Job Application Tracker
+  </text>
+
+  <!-- Subtitle -->
+  <text x="320" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#64748b">
+    Track Your Career Journey
+  </text>
+
+  <!-- Features -->
+  <g>
+    <!-- Feature 1 -->
+    <circle cx="320" cy="330" r="6" fill="#10b981"/>
+    <text x="340" y="338" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#374151">
+      Organize job applications & interviews
+    </text>
+
+    <!-- Feature 2 -->
+    <circle cx="320" cy="370" r="6" fill="#10b981"/>
+    <text x="340" y="378" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#374151">
+      Monitor application status & progress
+    </text>
+
+    <!-- Feature 3 -->
+    <circle cx="320" cy="410" r="6" fill="#10b981"/>
+    <text x="340" y="418" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#374151">
+      Professional career management tool
+    </text>
+  </g>
+
+  <!-- URL -->
+  <text x="80" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#94a3b8">
+    job-application-tracker.vercel.app
+  </text>
+</svg>
