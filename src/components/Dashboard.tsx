@@ -23,14 +23,14 @@ import {
   Clock,
   XCircle,
   LogOut,
-  User
+  User,
+  AlertTriangle
 } from "lucide-react";
 import {
   getUserJobApplications,
   addJobApplication,
   updateJobApplication,
-  deleteJobApplication,
-  migrateLocalStorageToFirestore
+  deleteJobApplication
 } from "@/lib/firestore";
 
 export default function Dashboard() {
@@ -39,30 +39,20 @@ export default function Dashboard() {
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load jobs from Firestore on component mount and when user changes
+  // Load jobs from Firestore (if authenticated) or localStorage (if not) on component mount and when user changes
   useEffect(() => {
     const loadJobs = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
 
-        // First, try to migrate any existing localStorage data
-        const localJobs = localStorage.getItem('jobApplications');
-        if (localJobs) {
-          try {
-            await migrateLocalStorageToFirestore(user.uid);
-          } catch (error) {
-            console.error('Error migrating localStorage data:', error);
-          }
+        if (user) {
+          // Load jobs from Firestore for authenticated users
+          const userJobs = await getUserJobApplications(user.uid);
+          setJobs(userJobs);
+        } else {
+          // For unauthenticated users, start with empty state (no persistence)
+          setJobs([]);
         }
-
-        // Load jobs from Firestore
-        const userJobs = await getUserJobApplications(user.uid);
-        setJobs(userJobs);
       } catch (error) {
         console.error('Error loading jobs:', error);
         setJobs([]);
@@ -74,8 +64,33 @@ export default function Dashboard() {
     loadJobs();
   }, [user]);
 
+
   const handleAddJob = async (jobData: JobApplicationFormData) => {
-    if (!user) return;
+    if (!user) {
+      // For unauthenticated users, just update state (no persistence)
+      if (editingJob) {
+        // Update existing job
+        setJobs(prev => prev.map(job =>
+          job.id === editingJob.id
+            ? { ...job, ...jobData }
+            : job
+        ));
+        setEditingJob(null);
+      } else {
+        // Add new job with a temporary ID
+        const newJob: JobApplication = {
+          ...jobData,
+          id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          assessment: null,
+          response: null,
+          responseDate: null,
+          interview: null,
+          decision: "",
+        };
+        setJobs(prev => [newJob, ...prev]);
+      }
+      return;
+    }
 
     try {
       if (editingJob) {
@@ -108,6 +123,12 @@ export default function Dashboard() {
   };
 
   const handleDeleteJob = async (id: string) => {
+    if (!user) {
+      // For unauthenticated users, just update state (no persistence)
+      setJobs(prev => prev.filter(job => job.id !== id));
+      return;
+    }
+
     try {
       await deleteJobApplication(id);
       setJobs(prev => prev.filter(job => job.id !== id));
@@ -118,6 +139,14 @@ export default function Dashboard() {
   };
 
   const handleUpdateJob = async (id: string, updates: Partial<JobApplication>) => {
+    if (!user) {
+      // For unauthenticated users, just update state (no persistence)
+      setJobs(prev => prev.map(job =>
+        job.id === id ? { ...job, ...updates } : job
+      ));
+      return;
+    }
+
     try {
       await updateJobApplication(id, updates);
       setJobs(prev => prev.map(job =>
@@ -219,29 +248,44 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* User Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 h-10 px-3 rounded-full hover:bg-slate-100">
-                  <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-slate-600" />
-                  </div>
-                  <span className="hidden sm:inline text-sm font-medium text-slate-700 truncate max-w-[120px]">
-                    {user?.displayName || user?.email}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem disabled className="font-medium">
-                  <User className="mr-2 h-4 w-4" />
-                  {user?.displayName || user?.email}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* User Profile Dropdown or Sign In Button */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 h-10 px-3 rounded-full hover:bg-slate-100">
+                    <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-slate-600" />
+                    </div>
+                    <span className="hidden sm:inline text-sm font-medium text-slate-700 truncate max-w-[120px]">
+                      {user.displayName || user.email}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem disabled className="font-medium">
+                    <User className="mr-2 h-4 w-4" />
+                    {user.displayName || user.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                onClick={() => window.location.href = '/login'}
+                className="flex items-center gap-2 h-10 px-3 rounded-full"
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline text-sm font-medium">
+                  Sign In to Save Data
+                </span>
+                <span className="sm:hidden text-sm font-medium">
+                  Sign In
+                </span>
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -254,6 +298,32 @@ export default function Dashboard() {
             </Badge>
           </div>
         </div>
+
+        {/* Sign-in prompt for unauthenticated users */}
+        {!user && (
+          <div className="mb-6 sm:mb-8">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-amber-800">
+                    Sign in to save your data
+                  </h3>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Your job applications will be lost when you refresh the page. Sign in with Google to save them permanently.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => window.location.href = '/login'}
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  Sign In
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add New Job Application Button */}
         <div className="mb-6 sm:mb-8">

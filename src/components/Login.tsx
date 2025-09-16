@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Briefcase, Loader2 } from 'lucide-react';
+import { Briefcase, Loader2, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Login() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, loading, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Redirect to dashboard after successful sign-in
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
+
+  const handleBackToDashboard = () => {
+    router.push('/');
+  };
 
   const handleGoogleSignIn = async () => {
     try {
@@ -24,7 +37,15 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToDashboard}
+            className="absolute top-4 left-4 p-2 h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <div className="mx-auto mb-4 p-3 bg-primary rounded-full w-fit">
             <Briefcase className="h-8 w-8 text-primary-foreground" />
           </div>

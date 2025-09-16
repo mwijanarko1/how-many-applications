@@ -14,7 +14,7 @@ export default function ConditionalAuthGuard({ children }: ConditionalAuthGuardP
   const pathname = usePathname();
 
   // Pages that don't require authentication
-  const publicPages = ['/privacy-policy', '/terms-of-service'];
+  const publicPages = ['/', '/privacy-policy', '/terms-of-service'];
 
   // Show loading spinner while checking authentication
   if (loading) {
