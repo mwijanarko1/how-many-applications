@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Briefcase,
-  TrendingUp,
   Users,
   Award,
   CheckCircle,
@@ -24,7 +23,8 @@ import {
   XCircle,
   LogOut,
   User,
-  AlertTriangle
+  AlertTriangle,
+  TrendingUp
 } from "lucide-react";
 import {
   getUserJobApplications,
@@ -38,6 +38,14 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Filter states
+  const [filters, setFilters] = useState({
+    response: 'all', // 'all', 'waiting', 'assessment', 'interview', 'rejection'
+    decision: 'all', // 'all', 'pending', 'rejected', 'offered'
+    assessment: 'all', // 'all', 'pending', 'passed', 'failed', 'n/a'
+    interview: 'all' // 'all', 'pending', 'scheduled', 'no-interview'
+  });
 
   // Load jobs from Firestore (if authenticated) or localStorage (if not) on component mount and when user changes
   useEffect(() => {
@@ -173,6 +181,56 @@ export default function Dashboard() {
   const handleCancelEdit = () => {
     setEditingJob(null);
   };
+
+  // Filter jobs based on current filter state
+  const filteredJobs = jobs.filter(job => {
+    // Response filter
+    if (filters.response !== 'all') {
+      const responseValue = job.response === null ? 'waiting' : job.response;
+      if (responseValue !== filters.response) return false;
+    }
+
+    // Decision filter
+    if (filters.decision !== 'all') {
+      let decisionValue = 'pending';
+      if (job.decision === 'Rejected') decisionValue = 'rejected';
+      else if (job.decision === 'Offered Job') decisionValue = 'offered';
+      if (decisionValue !== filters.decision) return false;
+    }
+
+    // Assessment filter
+    if (filters.assessment !== 'all') {
+      let assessmentValue = 'pending';
+      if (job.assessment === true) assessmentValue = 'passed';
+      else if (job.assessment === false) assessmentValue = 'failed';
+      else if (job.assessment === 'n/a') assessmentValue = 'n/a';
+      if (assessmentValue !== filters.assessment) return false;
+    }
+
+    // Interview filter
+    if (filters.interview !== 'all') {
+      let interviewValue = 'pending';
+      if (job.interview === true) interviewValue = 'scheduled';
+      else if (job.interview === false) interviewValue = 'no-interview';
+      if (interviewValue !== filters.interview) return false;
+    }
+
+    return true;
+  });
+
+  const handleFilterChange = (filterType: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [filterType]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      response: 'all',
+      decision: 'all',
+      assessment: 'all',
+      interview: 'all'
+    });
+  };
+
 
   // Calculate summary statistics
   const totalApplications = jobs.length;
@@ -444,14 +502,16 @@ export default function Dashboard() {
         </div>
 
         {/* Job Applications Table */}
-        <div>
-          <JobTable
-            jobs={jobs}
-            onDelete={handleDeleteJob}
-            onUpdate={handleUpdateJob}
-            onEdit={handleEditJob}
-          />
-        </div>
+        <JobTable
+          jobs={filteredJobs}
+          onDelete={handleDeleteJob}
+          onUpdate={handleUpdateJob}
+          onEdit={handleEditJob}
+          totalJobsCount={jobs.length}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+        />
       </div>
     </div>
   );

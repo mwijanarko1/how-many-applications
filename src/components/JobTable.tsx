@@ -37,8 +37,6 @@ import {
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
   Briefcase,
-  Building2,
-  Calendar,
   ExternalLink,
   MoreHorizontal,
   Edit3,
@@ -52,14 +50,34 @@ import {
   Users
 } from "lucide-react";
 
+interface FilterState {
+  response: string;
+  decision: string;
+  assessment: string;
+  interview: string;
+}
+
 interface JobTableProps {
   jobs: JobApplication[];
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<JobApplication>) => void;
   onEdit: (job: JobApplication) => void;
+  totalJobsCount?: number;
+  filters?: FilterState;
+  onFilterChange?: (filterType: keyof FilterState, value: string) => void;
+  onClearFilters?: () => void;
 }
 
-export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableProps) {
+export default function JobTable({
+  jobs,
+  onDelete,
+  onUpdate,
+  onEdit,
+  totalJobsCount,
+  filters,
+  onFilterChange,
+  onClearFilters
+}: JobTableProps) {
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
 
   // Helper functions to determine which columns to show
@@ -140,7 +158,12 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
             </div>
             <div>
               <CardTitle className="text-xl">Job Applications</CardTitle>
-              <CardDescription>{jobs.length} application{jobs.length !== 1 ? 's' : ''} tracked</CardDescription>
+              <CardDescription>
+                {totalJobsCount && filters && Object.values(filters).some(value => value !== 'all')
+                  ? `${jobs.length} of ${totalJobsCount} application${totalJobsCount !== 1 ? 's' : ''} shown`
+                  : `${jobs.length} application${jobs.length !== 1 ? 's' : ''} tracked`
+                }
+              </CardDescription>
             </div>
           </div>
           <Badge variant="outline" className="text-sm">
@@ -149,6 +172,91 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
         </div>
       </CardHeader>
       <CardContent>
+        {/* Filter Controls */}
+        {filters && onFilterChange && (
+          <div className="mb-6 pb-4 border-b border-slate-200">
+            {filters && Object.values(filters).some(value => value !== 'all') && onClearFilters && (
+              <div className="flex justify-end mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onClearFilters}
+                  className="text-slate-600 hover:text-slate-800"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Response Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Response Status</label>
+                <Select value={filters.response} onValueChange={(value) => onFilterChange('response', value)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All responses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Responses</SelectItem>
+                    <SelectItem value="waiting">Waiting</SelectItem>
+                    <SelectItem value="assessment" className="text-black focus:bg-gray-100">Assessment</SelectItem>
+                    <SelectItem value="interview" className="text-black focus:bg-gray-100">Interview</SelectItem>
+                    <SelectItem value="rejection" className="text-black focus:bg-gray-100">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Decision Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Final Decision</label>
+                <Select value={filters.decision} onValueChange={(value) => onFilterChange('decision', value)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All decisions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Decisions</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="offered">Job Offered</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Assessment Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Assessment Status</label>
+                <Select value={filters.assessment} onValueChange={(value) => onFilterChange('assessment', value)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All assessments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Assessments</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="passed">Passed</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="n/a">No Assessment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Interview Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Interview Status</label>
+                <Select value={filters.interview} onValueChange={(value) => onFilterChange('interview', value)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All interviews" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Interviews</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="no-interview">No Interview</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-4">
           {jobs.map((job) => (
@@ -157,11 +265,9 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Briefcase className="h-4 w-4 text-slate-500" />
                       <h3 className="font-medium text-slate-900 text-sm">{job.title}</h3>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Building2 className="h-4 w-4" />
                       <span>{job.company}</span>
                     </div>
                   </div>
@@ -200,7 +306,6 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Calendar className="h-3 w-3" />
                   Applied {formatDate(job.appliedDate)}
                 </div>
 
@@ -212,7 +317,12 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                         value={job.response || 'waiting'}
                         onValueChange={(value) => {
                           const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection';
-                          onUpdate(job.id, { response: responseValue });
+                          const updates: Partial<JobApplication> = { response: responseValue };
+                          // If response is rejection, automatically set decision to Rejected
+                          if (responseValue === 'rejection') {
+                            updates.decision = 'Rejected';
+                          }
+                          onUpdate(job.id, updates);
                         }}
                       >
                         <SelectTrigger className="w-full h-7 text-xs">
@@ -397,47 +507,55 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Position</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Applied</TableHead>
-                <TableHead>Response Type</TableHead>
-                {showAssessmentColumn && <TableHead>Assessment</TableHead>}
-                {showInterviewColumn && <TableHead>Interview</TableHead>}
-                {showStatusColumn && <TableHead>Status</TableHead>}
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className="w-[200px] text-center">Position</TableHead>
+                <TableHead className="text-center">Company</TableHead>
+                <TableHead className="text-center">Applied</TableHead>
+                <TableHead className="text-center">Response Type</TableHead>
+                {showAssessmentColumn && <TableHead className="text-center">Assessment</TableHead>}
+                {showInterviewColumn && <TableHead className="text-center">Interview</TableHead>}
+                {showStatusColumn && <TableHead className="text-center">Status</TableHead>}
+                <TableHead className="w-[100px] text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
             {jobs.map((job) => (
                 <TableRow key={job.id} className="hover:bg-slate-50/50">
-                  <TableCell>
-                    <div className="font-medium text-slate-900 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-slate-500" />
+                  <TableCell className="text-center">
+                    <div className="font-medium text-slate-900 flex items-center justify-center gap-2">
                       {job.title}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-slate-500" />
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
                       <span className="font-medium">{job.company}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-slate-500" />
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2 text-sm">
                   {formatDate(job.appliedDate)}
                     </div>
                   </TableCell>
-                  <TableCell className="min-w-[160px]">
+                  <TableCell className="min-w-[160px] text-center">
                     <div className="space-y-2">
                       <Select
                         value={job.response || 'waiting'}
                         onValueChange={(value) => {
                           const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection';
-                      onUpdate(job.id, { response: responseValue });
-                    }}
+                          const updates: Partial<JobApplication> = { response: responseValue };
+                          // If response is rejection, automatically set decision to Rejected
+                          if (responseValue === 'rejection') {
+                            updates.decision = 'Rejected';
+                          }
+                          onUpdate(job.id, updates);
+                        }}
                       >
-                        <SelectTrigger className="w-full h-8">
+                        <SelectTrigger className={`w-full h-8 ${
+                          job.response === 'assessment' || job.response === 'interview'
+                            ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
+                            : job.response === 'rejection'
+                            ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
+                            : ''
+                        }`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -468,8 +586,7 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                         </SelectContent>
                       </Select>
                       {job.response && job.responseDate && (
-                        <div className="text-xs text-slate-500 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
+                        <div className="text-xs text-slate-500 flex items-center justify-center gap-1">
                           {formatDate(job.responseDate)}
                         </div>
                       )}
@@ -486,7 +603,7 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                     </div>
                   </TableCell>
                   {showAssessmentColumn && (
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Select
                       value={job.assessment === null ? 'null' : job.assessment === 'n/a' ? 'n/a' : job.assessment.toString()}
                         onValueChange={(value) => {
@@ -501,7 +618,13 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                         onUpdate(job.id, { assessment: assessmentValue });
                       }}
                       >
-                        <SelectTrigger className="w-[140px] h-8">
+                        <SelectTrigger className={`w-[140px] h-8 ${
+                          job.assessment === true
+                            ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
+                            : job.assessment === false
+                            ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
+                            : ''
+                        }`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -534,7 +657,7 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                     </TableCell>
                   )}
                   {showInterviewColumn && (
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Select
                       value={job.interview === null ? 'null' : job.interview.toString()}
                         onValueChange={(value) => {
@@ -569,7 +692,7 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                     </TableCell>
                   )}
                   {showStatusColumn && (
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Select
                         value={job.decision || 'pending'}
                         onValueChange={(value) => {
@@ -603,7 +726,7 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                       </Select>
                     </TableCell>
                   )}
-                  <TableCell>
+                  <TableCell className="text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -673,17 +796,14 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                           {selectedJob.title}
                         </h2>
                         <div className="flex items-center gap-2 text-slate-600">
-                          <Building2 className="h-4 w-4" />
                           <span className="font-medium">{selectedJob.company}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-slate-500">
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
                             Applied {formatDate(selectedJob.appliedDate)}
                           </div>
                           {selectedJob.response && selectedJob.responseDate && (
                             <div className="flex items-center gap-1">
-                              <CheckCircle className="h-4 w-4 text-green-500" />
                               Response {formatDate(selectedJob.responseDate)}
                             </div>
                           )}
@@ -711,7 +831,7 @@ export default function JobTable({ jobs, onDelete, onUpdate, onEdit }: JobTableP
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
                         <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <Calendar className="h-4 w-4 text-white" />
+                          <div className="w-4 h-4 bg-white rounded-full"></div>
                         </div>
                         <div className="w-0.5 h-8 bg-blue-200 mt-2"></div>
                       </div>
