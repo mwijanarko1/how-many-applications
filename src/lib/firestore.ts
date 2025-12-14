@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { JobApplication, JobApplicationFormData } from '@/types/jobApplication';
+import { shouldMarkAsNoResponse } from './utils';
 
 const COLLECTION_NAME = 'jobApplications';
 
@@ -23,7 +24,7 @@ interface FirestoreJobApplication {
   jobLink: string;
   appliedDate: string;
   assessment: boolean | null | 'n/a';
-  response: 'assessment' | 'interview' | 'rejection' | null;
+  response: 'assessment' | 'interview' | 'rejection' | 'no_response' | null;
   responseDate: Timestamp | null;
   interview: boolean | null;
   decision: string;
@@ -56,6 +57,10 @@ export const getUserJobApplications = async (userId: string): Promise<JobApplica
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      const response = shouldMarkAsNoResponse(data.appliedDate, data.response)
+        ? 'no_response'
+        : data.response;
+
       jobs.push({
         id: doc.id,
         title: data.title,
@@ -64,7 +69,7 @@ export const getUserJobApplications = async (userId: string): Promise<JobApplica
         jobLink: data.jobLink,
         appliedDate: data.appliedDate,
         assessment: data.assessment,
-        response: data.response,
+        response: response,
         responseDate: convertTimestampToString(data.responseDate),
         interview: data.interview,
         decision: data.decision,

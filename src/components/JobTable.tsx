@@ -21,20 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import BasicDropdown from "@/components/smoothui/basic-dropdown";
+import BasicModal from "@/components/smoothui/basic-modal";
 import {
   Briefcase,
   ExternalLink,
@@ -79,6 +67,11 @@ export default function JobTable({
   onClearFilters
 }: JobTableProps) {
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [editingDate, setEditingDate] = useState<{
+    jobId: string;
+    field: 'appliedDate' | 'responseDate';
+    currentDate: string;
+  } | null>(null);
 
   // Helper functions to determine which columns to show
   const shouldShowAssessmentColumn = (jobs: JobApplication[]) => {
@@ -115,17 +108,18 @@ export default function JobTable({
     });
   };
 
-  const getResponseBadge = (response: 'assessment' | 'interview' | 'rejection' | null) => {
+  const getResponseBadge = (response: 'assessment' | 'interview' | 'rejection' | 'no_response' | null) => {
     if (response === null) return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Waiting</Badge>;
     if (response === 'assessment') return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100"><FileText className="w-3 h-3 mr-1" />Assessment</Badge>;
     if (response === 'interview') return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100"><Users className="w-3 h-3 mr-1" />Interview</Badge>;
     if (response === 'rejection') return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+    if (response === 'no_response') return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />No Response</Badge>;
     return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Waiting</Badge>;
   };
 
   if (jobs.length === 0) {
     return (
-      <Card>
+      <Card className="bg-white overflow-visible">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-slate-100 rounded-lg">
@@ -149,7 +143,7 @@ export default function JobTable({
   }
 
   return (
-    <Card>
+    <Card className="bg-white overflow-visible">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -201,6 +195,7 @@ export default function JobTable({
                     <SelectItem value="assessment" className="text-black focus:bg-gray-100">Assessment</SelectItem>
                     <SelectItem value="interview" className="text-black focus:bg-gray-100">Interview</SelectItem>
                     <SelectItem value="rejection" className="text-black focus:bg-gray-100">Rejected</SelectItem>
+                    <SelectItem value="no_response" className="text-black focus:bg-gray-100">No Response</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -260,7 +255,7 @@ export default function JobTable({
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-4">
           {jobs.map((job) => (
-            <Card key={job.id} className="p-4">
+            <Card key={job.id} className="p-4 bg-white overflow-visible">
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -271,42 +266,65 @@ export default function JobTable({
                       <span>{job.company}</span>
                     </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSelectedJob(job)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      {job.jobLink && (
-                        <DropdownMenuItem
-                          onClick={() => window.open(job.jobLink, '_blank', 'noopener,noreferrer')}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          View Job Posting
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => onEdit(job)}>
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onDelete(job.id)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <BasicDropdown
+                    label=""
+                    showLabel={false}
+                    icon={<MoreHorizontal className="h-4 w-4" />}
+                    className="h-8 w-8 p-0"
+                    items={[
+                      {
+                        id: 'view-details',
+                        label: 'View Details',
+                        icon: <Eye className="h-4 w-4" />
+                      },
+                      ...(job.jobLink ? [{
+                        id: 'view-job',
+                        label: 'View Job Posting',
+                        icon: <ExternalLink className="h-4 w-4" />
+                      }] : []),
+                      {
+                        id: 'edit',
+                        label: 'Edit',
+                        icon: <Edit3 className="h-4 w-4" />
+                      },
+                      {
+                        id: 'delete',
+                        label: 'Delete',
+                        icon: <Trash2 className="h-4 w-4" />
+                      }
+                    ]}
+                    onChange={(item) => {
+                      switch (item.id) {
+                        case 'view-details':
+                          setSelectedJob(job);
+                          break;
+                        case 'view-job':
+                          window.open(job.jobLink, '_blank', 'noopener,noreferrer');
+                          break;
+                        case 'edit':
+                          onEdit(job);
+                          break;
+                        case 'delete':
+                          onDelete(job.id);
+                          break;
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  Applied {formatDate(job.appliedDate)}
+                  <span>Applied {formatDate(job.appliedDate)}</span>
+                      <button
+                        onClick={() => setEditingDate({
+                          jobId: job.id,
+                          field: 'appliedDate',
+                          currentDate: job.appliedDate || ''
+                        })}
+                        className="p-1 hover:bg-slate-200 rounded transition-colors"
+                        title="Edit application date"
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </button>
                 </div>
 
                 <div className="space-y-2">
@@ -316,10 +334,10 @@ export default function JobTable({
                       <Select
                         value={job.response || 'waiting'}
                         onValueChange={(value) => {
-                          const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection';
+                          const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection' | 'no_response';
                           const updates: Partial<JobApplication> = { response: responseValue };
-                          // If response is rejection, automatically set decision to Rejected
-                          if (responseValue === 'rejection') {
+                          // If response is rejection or no_response, automatically set decision to Rejected
+                          if (responseValue === 'rejection' || responseValue === 'no_response') {
                             updates.decision = 'Rejected';
                           }
                           onUpdate(job.id, updates);
@@ -328,7 +346,7 @@ export default function JobTable({
                         <SelectTrigger className="w-full h-7 text-xs">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="waiting">
                             <div className="flex items-center gap-2">
                               <Clock className="h-3 w-3" />
@@ -351,6 +369,12 @@ export default function JobTable({
                             <div className="flex items-center gap-2">
                               <XCircle className="h-3 w-3" />
                               Rejected
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="no_response">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-3 w-3" />
+                              No Response
                             </div>
                           </SelectItem>
                         </SelectContent>
@@ -379,7 +403,7 @@ export default function JobTable({
                           <SelectTrigger className="w-full h-7 text-xs">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             <SelectItem value="null">
                               <div className="flex items-center gap-2">
                                 <Clock className="h-3 w-3" />
@@ -424,7 +448,7 @@ export default function JobTable({
                           <SelectTrigger className="w-full h-7 text-xs">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             <SelectItem value="null">
                               <div className="flex items-center gap-2">
                                 <Clock className="h-3 w-3" />
@@ -463,7 +487,7 @@ export default function JobTable({
                           <SelectTrigger className="w-full h-7 text-xs">
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             <SelectItem value="pending">
                               <div className="flex items-center gap-2">
                                 <Clock className="h-3 w-3" />
@@ -493,7 +517,18 @@ export default function JobTable({
                   <div className="pt-2 border-t border-slate-100">
                     <div className="text-xs text-slate-500 flex items-center gap-1">
                       <CheckCircle className="h-3 w-3 text-green-500" />
-                      Response {formatDate(job.responseDate)}
+                      <span>Response {formatDate(job.responseDate)}</span>
+                      <button
+                        onClick={() => setEditingDate({
+                          jobId: job.id,
+                          field: 'responseDate',
+                          currentDate: job.responseDate || ''
+                        })}
+                        className="p-1 hover:bg-slate-200 rounded transition-colors"
+                        title="Edit response date"
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                 )}
@@ -540,10 +575,10 @@ export default function JobTable({
                       <Select
                         value={job.response || 'waiting'}
                         onValueChange={(value) => {
-                          const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection';
+                          const responseValue = value === 'waiting' ? null : value as 'assessment' | 'interview' | 'rejection' | 'no_response';
                           const updates: Partial<JobApplication> = { response: responseValue };
-                          // If response is rejection, automatically set decision to Rejected
-                          if (responseValue === 'rejection') {
+                          // If response is rejection or no_response, automatically set decision to Rejected
+                          if (responseValue === 'rejection' || responseValue === 'no_response') {
                             updates.decision = 'Rejected';
                           }
                           onUpdate(job.id, updates);
@@ -552,13 +587,13 @@ export default function JobTable({
                         <SelectTrigger className={`w-full h-8 ${
                           job.response === 'assessment' || job.response === 'interview'
                             ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
-                            : job.response === 'rejection'
+                            : job.response === 'rejection' || job.response === 'no_response'
                             ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
                             : ''
                         }`}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="waiting">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
@@ -583,14 +618,31 @@ export default function JobTable({
                               Rejected
                             </div>
                           </SelectItem>
+                          <SelectItem value="no_response">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-4 w-4" />
+                              No Response
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       {job.response && job.responseDate && (
                         <div className="text-xs text-slate-500 flex items-center justify-center gap-1">
-                          {formatDate(job.responseDate)}
+                          <span>{formatDate(job.responseDate)}</span>
+                          <button
+                            onClick={() => setEditingDate({
+                              jobId: job.id,
+                              field: 'responseDate',
+                              currentDate: job.responseDate || ''
+                            })}
+                            className="p-1 hover:bg-slate-200 rounded transition-colors"
+                            title="Edit response date"
+                          >
+                            <Edit3 className="h-3 w-3" />
+                          </button>
                         </div>
                       )}
-                      {job.response && !job.responseDate && (
+                      {job.response && job.response !== 'no_response' && !job.responseDate && (
                         <Input
                           type="date"
                           placeholder="Response date"
@@ -627,7 +679,7 @@ export default function JobTable({
                         }`}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="null">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
@@ -668,7 +720,7 @@ export default function JobTable({
                         <SelectTrigger className="w-[120px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="null">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
@@ -692,7 +744,7 @@ export default function JobTable({
                     </TableCell>
                   )}
                   {showStatusColumn && (
-                    <TableCell className="text-center">
+                    <TableCell className="text-center flex justify-center">
                       <Select
                         value={job.decision || 'pending'}
                         onValueChange={(value) => {
@@ -703,7 +755,7 @@ export default function JobTable({
                         <SelectTrigger className="w-[130px] h-8">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="pending">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
@@ -726,39 +778,51 @@ export default function JobTable({
                       </Select>
                     </TableCell>
                   )}
-                  <TableCell className="text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setSelectedJob(job)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        {job.jobLink && (
-                          <DropdownMenuItem
-                            onClick={() => window.open(job.jobLink, '_blank', 'noopener,noreferrer')}
-                          >
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            View Job Posting
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => onEdit(job)}>
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onDelete(job.id)}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell className="text-center flex justify-center items-center" style={{ height: '50px' }}>
+                    <BasicDropdown
+                      label=""
+                      showLabel={false}
+                      icon={<MoreHorizontal className="h-4 w-4" />}
+                      items={[
+                        {
+                          id: 'view-details',
+                          label: 'View Details',
+                          icon: <Eye className="h-4 w-4" />
+                        },
+                        ...(job.jobLink ? [{
+                          id: 'view-job',
+                          label: 'View Job Posting',
+                          icon: <ExternalLink className="h-4 w-4" />
+                        }] : []),
+                        {
+                          id: 'edit',
+                          label: 'Edit',
+                          icon: <Edit3 className="h-4 w-4" />
+                        },
+                        {
+                          id: 'delete',
+                          label: 'Delete',
+                          icon: <Trash2 className="h-4 w-4" />
+                        }
+                      ]}
+                      onChange={(item) => {
+                        switch (item.id) {
+                          case 'view-details':
+                            setSelectedJob(job);
+                            break;
+                          case 'view-job':
+                            window.open(job.jobLink, '_blank', 'noopener,noreferrer');
+                            break;
+                          case 'edit':
+                            onEdit(job);
+                            break;
+                          case 'delete':
+                            onDelete(job.id);
+                            break;
+                        }
+                      }}
+                      className="h-8 w-8 p-0"
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -768,21 +832,15 @@ export default function JobTable({
       </CardContent>
 
       {/* Job Details Modal */}
-      <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedJob && (
-            <>
-              {/* Accessibility: Hidden Dialog Header for screen readers */}
-              <DialogHeader>
-                <VisuallyHidden>
-                  <DialogTitle>Job Application Details - {selectedJob.title} at {selectedJob.company}</DialogTitle>
-                  <DialogDescription>
-                    View detailed information about your job application including timeline, status, and actions.
-                  </DialogDescription>
-                </VisuallyHidden>
-              </DialogHeader>
-
-              {/* Modern Header */}
+      <BasicModal
+        isOpen={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+        title={`Job Application Details - ${selectedJob?.title} at ${selectedJob?.company}`}
+        size="full"
+      >
+        {selectedJob && (
+          <>
+            {/* Modern Header */}
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-lg opacity-10"></div>
                 <div className="relative p-6">
@@ -804,7 +862,18 @@ export default function JobTable({
                           </div>
                           {selectedJob.response && selectedJob.responseDate && (
                             <div className="flex items-center gap-1">
-                              Response {formatDate(selectedJob.responseDate)}
+                              <span>Response {formatDate(selectedJob.responseDate)}</span>
+                              <button
+                                onClick={() => setEditingDate({
+                                  jobId: selectedJob.id,
+                                  field: 'responseDate',
+                                  currentDate: selectedJob.responseDate || ''
+                                })}
+                                className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                title="Edit response date"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1101,10 +1170,58 @@ export default function JobTable({
                   </div>
                 </div>
               </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      </BasicModal>
+
+      {/* Date Editing Modal */}
+      <BasicModal
+        isOpen={!!editingDate}
+        onClose={() => setEditingDate(null)}
+        title={`Edit ${editingDate?.field === 'appliedDate' ? 'Application' : 'Response'} Date`}
+      >
+        {editingDate && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {editingDate.field === 'appliedDate' ? 'Application Date' : 'Response Date'}
+              </label>
+              <Input
+                type="date"
+                defaultValue={editingDate.currentDate}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  if (newDate) {
+                    onUpdate(editingDate.jobId, { [editingDate.field]: newDate });
+                    setEditingDate(null);
+                  }
+                }}
+                className="w-full"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditingDate(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const input = document.querySelector('input[type="date"]') as HTMLInputElement;
+                  if (input && input.value) {
+                    onUpdate(editingDate.jobId, { [editingDate.field]: input.value });
+                    setEditingDate(null);
+                  }
+                }}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        )}
+      </BasicModal>
     </Card>
   );
 }

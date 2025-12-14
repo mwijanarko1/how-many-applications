@@ -8,12 +8,7 @@ import JobTable from "./JobTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import BasicDropdown from "@/components/smoothui/basic-dropdown";
 import {
   Briefcase,
   Users,
@@ -237,7 +232,7 @@ export default function Dashboard() {
   const totalRejected = jobs.filter(job => job.decision === 'Rejected').length;
   const totalInterview1 = jobs.filter(job => job.assessment === true).length;
   const totalInterviewFinal = jobs.filter(job => job.decision === 'Offered Job').length;
-  const totalResponses = jobs.filter(job => job.response !== null).length;
+  const totalResponses = jobs.filter(job => job.response !== null && job.response !== 'no_response').length;
   const totalInterviews = jobs.filter(job => job.interview === true).length;
   const responseRate = totalApplications > 0 ?
     (totalResponses / totalApplications * 100).toFixed(1) : 0;
@@ -308,32 +303,31 @@ export default function Dashboard() {
 
             {/* User Profile Dropdown or Sign In Button */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-10 px-3 rounded-full hover:bg-slate-100">
-                    <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-slate-600" />
-                    </div>
-                    <span className="hidden sm:inline text-sm font-medium text-slate-700 truncate max-w-[120px]">
-                      {user.displayName || user.email}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem disabled className="font-medium">
-                    <User className="mr-2 h-4 w-4" />
-                    {user.displayName || user.email}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <BasicDropdown
+                label="Account"
+                items={[
+                  {
+                    id: 'user-info',
+                    label: user.displayName || user.email || '',
+                    icon: <User className="h-4 w-4" />
+                  },
+                  {
+                    id: 'sign-out',
+                    label: 'Sign Out',
+                    icon: <LogOut className="h-4 w-4" />
+                  }
+                ]}
+                onChange={(item) => {
+                  if (item.id === 'sign-out') {
+                    handleSignOut();
+                  }
+                }}
+                className="h-10 px-3 rounded-full"
+              />
             ) : (
               <Button
                 onClick={() => window.location.href = '/login'}
-                className="flex items-center gap-2 h-10 px-3 rounded-full"
+                className="flex items-center gap-2 h-10 px-3 rounded-full bg-black text-white hover:bg-gray-800"
               >
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline text-sm font-medium">
@@ -362,7 +356,7 @@ export default function Dashboard() {
           <div className="mb-6 sm:mb-8">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-amber-800">
                     Sign in to save your data
@@ -397,7 +391,7 @@ export default function Dashboard() {
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
+              <Card key={index} className="hover:shadow-lg transition-shadow duration-200 bg-white overflow-visible">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium text-slate-600">
                     {stat.title}
@@ -421,7 +415,7 @@ export default function Dashboard() {
 
         {/* Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
+          <Card className="bg-white overflow-visible">
             <CardHeader className="pb-3">
               <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
@@ -444,7 +438,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white overflow-visible">
             <CardHeader className="pb-3">
               <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
@@ -479,7 +473,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white overflow-visible">
             <CardHeader className="pb-3">
               <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />

@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import BasicModal from "@/components/smoothui/basic-modal";
 import { Plus, Edit3, Building2, Briefcase, Link as LinkIcon, Calendar, X } from "lucide-react";
 
 interface JobFormProps {
@@ -104,30 +98,15 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
         {isEditing ? 'Edit Job Application' : 'Add New Job Application'}
       </Button>
 
-      {/* Dialog Modal */}
-      <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-2xl">
-              {isEditing ? (
-                <>
-                  <Edit3 className="h-6 w-6 text-orange-600" />
-                  Edit Job Application
-                </>
-              ) : (
-                <>
-                  <Plus className="h-6 w-6 text-black" />
-                  Add New Job Application
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? 'Update the details of your job application'
-                : 'Enter the details of the job you want to track'
-              }
-            </DialogDescription>
-          </DialogHeader>
+      {/* Modal */}
+      <BasicModal
+        isOpen={isOpen}
+        onClose={handleCloseDialog}
+        title={
+          isEditing ? "Edit Job Application" : "Add New Job Application"
+        }
+        size="xl"
+      >
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -144,7 +123,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
                   onChange={handleInputChange}
                   required
                   placeholder="e.g. Senior Software Engineer"
-                  className="transition-colors focus:ring-2"
+                  className="transition-colors focus:ring-2 focus:ring-ring"
                 />
               </div>
 
@@ -161,7 +140,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
                   onChange={handleInputChange}
                   required
                   placeholder="e.g. Google Inc."
-                  className="transition-colors focus:ring-2"
+                  className="transition-colors focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
@@ -249,8 +228,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+      </BasicModal>
     </>
   );
 }
