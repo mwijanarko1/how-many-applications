@@ -803,49 +803,47 @@ export default function JobTable({
       <BasicModal
         isOpen={!!selectedJob}
         onClose={() => setSelectedJob(null)}
-        title={`Job Application Details - ${selectedJob?.title} at ${selectedJob?.company}`}
+        title="Job Application Details"
         size="full"
       >
         {selectedJob && (
           <>
             {/* Modern Header */}
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-lg opacity-10"></div>
                 <div className="relative p-6">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-                        <Briefcase className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <h2 className="text-2xl font-bold text-slate-900 leading-tight">
-                          {selectedJob.title}
-                        </h2>
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <span className="font-medium">{selectedJob.company}</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
-                          <div className="flex items-center gap-1">
-                            Applied {formatDate(selectedJob.appliedDate)}
+                    <div className="space-y-1">
+                        <h2 className="text-lg font-semibold text-slate-900">Application Details</h2>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-600">Application ID:</span>
+                            <code className="text-sm bg-slate-100 px-2 py-1 rounded font-mono">
+                              {selectedJob.id.slice(-8)}
+                            </code>
                           </div>
-                          {selectedJob.response && selectedJob.responseDate && (
-                            <div className="flex items-center gap-1">
-                              <span>Response {formatDate(selectedJob.responseDate)}</span>
-                              <button
-                                onClick={() => setEditingDate({
-                                  jobId: selectedJob.id,
-                                  field: 'responseDate',
-                                  currentDate: selectedJob.responseDate || ''
-                                })}
-                                className="p-1 hover:bg-slate-200 rounded transition-colors"
-                                title="Edit response date"
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-600">Position:</span>
+                            <span className="text-sm text-slate-900">{selectedJob.title}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-600">Company:</span>
+                            <span className="text-sm text-slate-900">{selectedJob.company}</span>
+                          </div>
+                          {selectedJob.jobLink && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-slate-600">Job Link:</span>
+                              <a
+                                href={selectedJob.jobLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
                               >
-                                <Edit3 className="h-3 w-3" />
-                              </button>
+                                View Posting
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
                             </div>
                           )}
                         </div>
-                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {getResponseBadge(selectedJob.response)}
@@ -858,8 +856,7 @@ export default function JobTable({
 
                 {/* Application Timeline */}
                 <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">
                     Application Timeline
                   </h3>
 
@@ -1034,109 +1031,34 @@ export default function JobTable({
                   </div>
                 </div>
 
-                {/* Job Details Cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                  {/* Job Description Card */}
-                  {selectedJob.description && (
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                          <FileText className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-slate-900">Job Description</h3>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-4 max-h-48 overflow-y-auto">
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                          {selectedJob.description}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Job Link Card */}
-                  {selectedJob.jobLink && (
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-green-50 rounded-lg">
-                          <LinkIcon className="h-5 w-5 text-green-600" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-slate-900">Job Posting</h3>
-                      </div>
-                      <div className="space-y-3">
-                        <a
-                          href={selectedJob.jobLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                        >
-                          View Original Posting
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                        <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg break-all">
-                          {selectedJob.jobLink}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Application Details Card */}
+                {/* Job Description Card */}
+                {selectedJob.description && (
                   <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-purple-50 rounded-lg">
-                        <Briefcase className="h-5 w-5 text-purple-600" />
+                      <div className="p-2 bg-slate-100 rounded-lg">
+                        <FileText className="h-5 w-5 text-blue-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900">Application Details</h3>
+                      <h3 className="text-lg font-semibold text-slate-900">Job Description</h3>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-sm font-medium text-slate-600">Application ID</span>
-                        <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">
-                          {selectedJob.id.slice(-8)}
-                        </code>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-sm font-medium text-slate-600">Position</span>
-                        <span className="text-sm text-slate-900">{selectedJob.title}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm font-medium text-slate-600">Company</span>
-                        <span className="text-sm text-slate-900">{selectedJob.company}</span>
-                      </div>
+                    <div className="bg-slate-50 rounded-lg p-4 max-h-48 overflow-y-auto">
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {selectedJob.description}
+                      </p>
                     </div>
                   </div>
+                )}
 
-                  {/* Quick Actions Card */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-orange-50 rounded-lg">
-                        <MoreHorizontal className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-slate-900">Quick Actions</h3>
-                    </div>
-                    <div className="space-y-3">
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => window.open(selectedJob.jobLink, '_blank', 'noopener,noreferrer')}
-                        disabled={!selectedJob.jobLink}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Job Posting
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => navigator.clipboard.writeText(
-                          `Job Application: ${selectedJob.title} at ${selectedJob.company}\nStatus: ${selectedJob.decision || 'In Progress'}`
-                        )}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Copy Summary
-                      </Button>
-                    </div>
-                  </div>
+                {/* Edit Application Button */}
+                <div className="flex justify-center mt-4">
+                  <Button
+                    onClick={() => onEdit(selectedJob)}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Edit Application
+                  </Button>
                 </div>
+
               </div>
           </>
         )}

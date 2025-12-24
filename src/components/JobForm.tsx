@@ -25,7 +25,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
     appliedDate: new Date().toISOString().split('T')[0],
   });
 
-  // Populate form when editing and open dialog
+  // Populate form when editing and open dialog, close when edit is complete
   useEffect(() => {
     if (editingJob) {
       setFormData({
@@ -36,8 +36,18 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
         appliedDate: editingJob.appliedDate,
       });
       setIsOpen(true); // Open dialog when editing
+    } else if (isOpen && !editingJob) {
+      // Close dialog when editing is complete (editingJob becomes null)
+      setIsOpen(false);
+      setFormData({
+        title: "",
+        company: "",
+        description: "",
+        jobLink: "",
+        appliedDate: new Date().toISOString().split('T')[0],
+      });
     }
-  }, [editingJob]);
+  }, [editingJob, isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
