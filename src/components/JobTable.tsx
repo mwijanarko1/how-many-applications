@@ -95,9 +95,10 @@ export default function JobTable({
   };
 
   // Determine visibility for each column
-  const showAssessmentColumn = shouldShowAssessmentColumn(jobs);
-  const showInterviewColumn = shouldShowInterviewColumn(jobs);
-  const showStatusColumn = shouldShowStatusColumn(jobs);
+  // Always hide Assessment, Interview, and Status columns to keep the view simple
+  const showAssessmentColumn = false;
+  const showInterviewColumn = false;
+  const showStatusColumn = false;
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -181,7 +182,7 @@ export default function JobTable({
                 </Button>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Response Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Response Status</label>
@@ -212,39 +213,6 @@ export default function JobTable({
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
                     <SelectItem value="offered">Job Offered</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Assessment Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Assessment Status</label>
-                <Select value={filters.assessment} onValueChange={(value) => onFilterChange('assessment', value)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="All assessments" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Assessments</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="passed">Passed</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                    <SelectItem value="n/a">No Assessment</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Interview Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Interview Status</label>
-                <Select value={filters.interview} onValueChange={(value) => onFilterChange('interview', value)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="All interviews" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Interviews</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="no-interview">No Interview</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -539,17 +507,17 @@ export default function JobTable({
 
         {/* Desktop Table View */}
         <div className="hidden md:block rounded-md border">
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px] text-center">Position</TableHead>
-                <TableHead className="text-center">Company</TableHead>
-                <TableHead className="text-center">Applied</TableHead>
-                <TableHead className="text-center">Response Type</TableHead>
-                {showAssessmentColumn && <TableHead className="text-center">Assessment</TableHead>}
-                {showInterviewColumn && <TableHead className="text-center">Interview</TableHead>}
-                {showStatusColumn && <TableHead className="text-center">Status</TableHead>}
-                <TableHead className="w-[100px] text-center">Actions</TableHead>
+                <TableHead className="text-center w-[20%]">Position</TableHead>
+                <TableHead className="text-center w-[20%]">Company</TableHead>
+                <TableHead className="text-center w-[20%]">Applied</TableHead>
+                <TableHead className="text-center w-[20%]">Response Type</TableHead>
+                {showAssessmentColumn && <TableHead className="text-center w-[20%]">Assessment</TableHead>}
+                {showInterviewColumn && <TableHead className="text-center w-[20%]">Interview</TableHead>}
+                {showStatusColumn && <TableHead className="text-center w-[20%]">Status</TableHead>}
+                <TableHead className="text-center w-[20%]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -570,7 +538,7 @@ export default function JobTable({
                   {formatDate(job.appliedDate)}
                     </div>
                   </TableCell>
-                  <TableCell className="min-w-[160px] text-center">
+                  <TableCell className="text-center">
                     <div className="space-y-2">
                       <Select
                         value={job.response || 'waiting'}
