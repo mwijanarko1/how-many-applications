@@ -36,7 +36,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
         appliedDate: editingJob.appliedDate,
       });
       setIsOpen(true); // Open dialog when editing
-    } else if (isOpen && !editingJob) {
+    } else if (!editingJob) {
       // Close dialog when editing is complete (editingJob becomes null)
       setIsOpen(false);
       setFormData({
@@ -47,7 +47,7 @@ export default function JobForm({ onSubmit, editingJob, onCancelEdit }: JobFormP
         appliedDate: new Date().toISOString().split('T')[0],
       });
     }
-  }, [editingJob, isOpen]);
+  }, [editingJob]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
